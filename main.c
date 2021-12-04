@@ -36,18 +36,33 @@ int dnscapture();  //dns
 pthread_t tid;        // thread id
 bool check = false;
 
+int protocol ; // TCP =1, DNS=2, ICMP=3
 
 int main(int argc, char*argv[])
 {
+
+	if(argc <3){
+		printf("Usage : <protocol> <Domain>\n");
+		printf("<protocol list>\n");
+		printf("TCP or DNS or ICMP\n");
+		return 0;
+	}
+	
+	if(argv[1] =="TCP")
+		protocol = 1;
+	if(argv[1] =="DNS")
+		protocol = 2;
+	if(argv[1] =="ICMP")
+		protocol = 3;
+
     int rc;
     char stop;
     char ch;
     int num;
 	pthread_t thread; // 쓰레드
     
-
-    
     while(1){
+
         if(check == false){
             menu(); // 메뉴 보여준다.
             printf("메뉴 번호 입력:");
@@ -289,7 +304,7 @@ void* PacketCapture(){
 
         if(buflen<0) // 버퍼를 받지 못했을 때
 	 	{
-		    printf("recvfrom에서부터 데이터를 받지 못했음\n");
+		    printf("recvfrom에서부터 데이터를 받지 못함.\n");
 		    exit(-1);
 		}
 
