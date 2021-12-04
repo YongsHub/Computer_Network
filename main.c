@@ -289,7 +289,7 @@ void* PacketCapture(){
 
         if(buflen<0) // 버퍼를 받지 못했을 때
 	 	{
-		    printf("recvfrom에서부터 데이터를 받지 못함.\n");
+		    printf("recvfrom에서부터 데이터를 받지 못했음\n");
 		    exit(-1);
 		}
 
