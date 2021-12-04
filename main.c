@@ -13,7 +13,10 @@
 #include<netinet/ip.h>		// 아이피 헤더를 위한 헤더 파일
 #include<netinet/udp.h>		// udp 헤더를 위한 헤더 파일
 #include<netinet/tcp.h>
+#include<netdb.h>
 #include<arpa/inet.h>           // to avoid warning at inet_ntoa
+
+
 
 FILE* log_txt;
 int total,tcp,udp,icmp,igmp,other,iphdrlen;
@@ -28,11 +31,13 @@ void udp_header(unsigned char* buffer, int buflen); // UDP PROTOCOL을 이용하
 void data_process(unsigned char* buffer,int buflen); // 받은 패킷 중에 TCP 또는 UDP일 때 다르게 캡처하기 위한 함수
 void menu(); // 메뉴 선택 함수
 void *PacketCapture();
+int dnscapture();  //dns 
+
 pthread_t tid;        // thread id
 bool check = false;
 
 
-int main()
+int main(int argc, char*argv[])
 {
     int rc;
     char stop;
@@ -45,12 +50,14 @@ int main()
     while(1){
         if(check == false){
             menu(); // 메뉴 보여준다.
-            printf("메뉴 번호 입력:");scanf("%d",&num);
+            printf("메뉴 번호 입력:");
+	    scanf("%d",&num);
+	    __fpurge(stdin);
         }
         if(num == 1 && check == false){
             check = true;
             rc = pthread_create(&thread, NULL, PacketCapture, NULL);
-            if(rc){
+            if(rc<0){
                 printf("ERROR, return code from pthread_create() is %d\n", rc);
                 exit(-1);
             }
@@ -58,21 +65,51 @@ int main()
             printf("프로그램을 종료합니다.\n");
             return 0;
         }
-        printf("패킷 캡처 중지시 q 입력 : \n");
-        scanf("%c",&stop);
 
-        if(stop == 'q' && check==true){
-            // Thread에게 Signal을 보냄
-            printf("capture stop\n");
-            pthread_cancel(tid);
-            check = false;
+	if(rc==0){ 
+        	printf("패킷 캡처를 시작합니다(q: stop) >>>>");
+		scanf("%c",&stop);
+		__fpurge(stdin);
+		if(stop == 'q' && check==true){
+            // Thread에게 Signal을 보냄 
+            	printf("capture stop\n");
+            	pthread_cancel(tid);
+            	check = false;
         }
+
+	}
     }
    
     
 	pthread_exit(NULL);
 
 }
+
+int dnscapture(){
+	 int i;
+        struct hostent *he;
+        struct in_addr **addr_list;
+
+        char *domain = malloc(sizeof(char)*20);
+
+        printf("domain plz >> ");
+        scanf("%s",domain);
+
+        he = gethostbyname(domain);
+
+        printf("Name : %s\n", he->h_name);
+        printf("IP addresses: \n");
+        addr_list = (struct in_addr **)he->h_addr_list;
+
+        for(i=0;addr_list[i] != NULL; i++)
+        {
+                printf("%s \n",inet_ntoa(*addr_list[i]));
+        };
+        printf("\n");
+
+        return 0;
+}
+
 
 void ethernet_header(unsigned char* buffer,int buflen) 
 {
@@ -208,6 +245,7 @@ void data_process(unsigned char* buffer,int buflen)
 }
 
 void menu(){
+	system("clear");
     printf("--------------------------------------------------\n");
 	printf("컴퓨터 네트워크 1 조\n");
     printf("1. 패킷 캡처 start\n2. 프로그램 종료\n");
@@ -221,7 +259,6 @@ void* PacketCapture(){
     
     tid = pthread_self();
 	log_txt=fopen("log.txt","w");
-	printf("패킷 캡처를 시작합니다.\n");
 	if(!log_txt) // 파일이 열리지 않았을 때
 	{
 		printf("log.txt 파일을 열 수 없습니다.\n");
