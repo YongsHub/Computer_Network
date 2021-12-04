@@ -15,11 +15,12 @@
 #include<netinet/tcp.h>
 #include<netdb.h>
 #include<arpa/inet.h>           // to avoid warning at inet_ntoa
+#include<netinet/ip_icmp.h>	//Provides declarations for icmp header
 
 
 
 FILE* log_txt;
-int total,tcp,udp,icmp,igmp,other,iphdrlen;
+int total,tcp,udp,icmp,igmp,other,iphdrlen,icmp;
 
 struct sockaddr saddr;
 struct sockaddr_in source,dest;
@@ -28,6 +29,7 @@ void ip_header(unsigned char* buffer,int buflen); // IP 헤더를 위한 함수
 void payload(unsigned char* buffer,int buflen) ; //paload에 대한 함수
 void tcp_header(unsigned char* buffer,int buflen) ; // TCP PROTOCOL을 이용하는 패킷을 위한 함수
 void udp_header(unsigned char* buffer, int buflen); // UDP PROTOCOL을 이용하는 패킷을 위한 함수
+void icmp_packet(unsigned char* buffer, int buflen); // ICMP
 void data_process(unsigned char* buffer,int buflen); // 받은 패킷 중에 TCP 또는 UDP일 때 다르게 캡처하기 위한 함수
 void menu(); // 메뉴 선택 함수
 void *PacketCapture();
@@ -37,32 +39,31 @@ pthread_t tid;        // thread id
 bool check = false;
 
 int protocol ; // TCP =1, DNS=2, ICMP=3
-
 int main(int argc, char*argv[])
 {
-
-	if(argc <3){
+    if(argc <3){
 		printf("Usage : <protocol> <Domain>\n");
 		printf("<protocol list>\n");
 		printf("TCP or DNS or ICMP\n");
 		return 0;
 	}
-	
+
 	if(argv[1] =="TCP")
 		protocol = 1;
 	if(argv[1] =="DNS")
 		protocol = 2;
 	if(argv[1] =="ICMP")
 		protocol = 3;
-
+		
     int rc;
     char stop;
     char ch;
     int num;
 	pthread_t thread; // 쓰레드
     
-    while(1){
 
+    
+    while(1){
         if(check == false){
             menu(); // 메뉴 보여준다.
             printf("메뉴 번호 입력:");
@@ -242,6 +243,44 @@ void udp_header(unsigned char* buffer, int buflen)
 
 }
 
+void icmp_packet(unsigned char* Buffer , int buflen)
+{
+	unsigned short iphdrlen;
+	
+	struct iphdr *iph = (struct iphdr *)(Buffer  + sizeof(struct ethhdr));
+	iphdrlen = iph->ihl * 4;
+	
+	struct icmphdr *icmph = (struct icmphdr *)(Buffer + iphdrlen  + sizeof(struct ethhdr));
+	
+	int header_size =  sizeof(struct ethhdr) + iphdrlen + sizeof icmph;
+	
+	fprintf(log_txt , "\n\n***********************ICMP Packet*************************\n");	
+	fprintf(log_txt , "ICMP Header\n");
+	fprintf(log_txt , "   |-Type : %d",(unsigned int)(icmph->type));
+			
+	if((unsigned int)(icmph->type) == 11)
+	{
+		fprintf(log_txt , "  (TTL Expired)\n");
+	}
+	else if((unsigned int)(icmph->type) == ICMP_ECHOREPLY)
+	{
+		fprintf(log_txt , "  (ICMP Echo Reply)\n");
+	}
+	
+	fprintf(log_txt , "   |-Code : %d\n",(unsigned int)(icmph->code));
+	fprintf(log_txt , "   |-Checksum : %d\n",ntohs(icmph->checksum));
+	//fprintf(logfile , "   |-ID       : %d\n",ntohs(icmph->id));
+	//fprintf(logfile , "   |-Sequence : %d\n",ntohs(icmph->sequence));
+	fprintf(log_txt , "\n");
+
+	
+	ip_header(Buffer,buflen);
+	ethernet_header(Buffer,buflen);
+	payload(Buffer,buflen);
+	fprintf(log_txt , "\n###########################################################");
+}
+
+
 void data_process(unsigned char* buffer,int buflen)
 {
 	struct iphdr *ip = (struct iphdr*)(buffer + sizeof (struct ethhdr));
@@ -249,7 +288,10 @@ void data_process(unsigned char* buffer,int buflen)
 	/* we will se UDP Protocol only*/ 
 	switch (ip->protocol)    //see /etc/protocols file 
 	{
-
+		case 1:
+		        ++icmp;
+		        icmp_packet(buffer,buflen);
+		        break;
 		case 6:
 			++tcp;
 			tcp_header(buffer,buflen);
@@ -264,7 +306,7 @@ void data_process(unsigned char* buffer,int buflen)
 			++other;
 
 	}
-	printf("TCP: %d  UDP: %d  Other: %d  Toatl: %d  \r",tcp,udp,other,total);
+	printf("TCP: %d  UDP: %d  ICMP: %d Other: %d  Toatl: %d  \r",tcp,udp,icmp,other,total);
 
 
 }
