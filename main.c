@@ -54,6 +54,7 @@ int main(int argc, char*argv[])
 	    scanf("%d",&num);
 	    __fpurge(stdin);
         }
+
         if(num == 1 && check == false){
             check = true;
             rc = pthread_create(&thread, NULL, PacketCapture, NULL);
@@ -64,20 +65,29 @@ int main(int argc, char*argv[])
         }else if(num == 2){
             printf("프로그램을 종료합니다.\n");
             return 0;
-        }
-
-	if(rc==0){ 
-        	printf("패킷 캡처를 시작합니다(q: stop) >>>>");
-		scanf("%c",&stop);
-		__fpurge(stdin);
-		if(stop == 'q' && check==true){
-            // Thread에게 Signal을 보냄 
-            	printf("capture stop\n");
-            	pthread_cancel(tid);
-            	check = false;
-        }
-
+        }else if(num != 1 && num !=2){
+		printf("check the number plz\n");
+		continue;
 	}
+
+	if(rc==0){
+	       while(1){	
+        		printf("Capturing~~ (q: stop) >>>>");
+			scanf("%c",&stop);
+			__fpurge(stdin);
+			if(stop == 'q' && check==true){
+           			 // Thread에게 Signal을 보냄 
+            			printf("capture stop\n");
+            			pthread_cancel(tid);
+            			check = false;
+				break;
+			}else{
+				printf("plz write correctly!\n");
+				continue;
+			}
+	       }
+		
+	 }
     }
    
     
