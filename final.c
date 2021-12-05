@@ -57,6 +57,12 @@ int main(int argc, char*argv[])
 		protocol = 2;
 	}else if(strcmp(argv[1],"ICMP")==0){
 		protocol = 3;
+	}else{
+		printf("Usage : <protocol>\n");
+		printf("<protocol list>\n");
+		printf("TCP or DNS or ICMP\n");
+		printf("check protocol plz\n");
+		return 0;	
 	}
 	
 		
@@ -71,13 +77,14 @@ int main(int argc, char*argv[])
     while(1){
         if(check == false){
             menu(); // 메뉴 보여준다.
+            __fpurge(stdin);
 		printf("Now protocol -> %s \n\n",argv[1]);
             printf("메뉴 번호 입력:");
 	    scanf("%d",&num);
 	    __fpurge(stdin);
         }
 
-        if(num == 1 && check == false){
+        if(num == 1){
         	check = true;
         	if(protocol ==2){
         	  	rc = pthread_create(&thread, NULL, PacketCapture, NULL);
@@ -96,7 +103,7 @@ int main(int argc, char*argv[])
         }else if(num == 2){
             printf("프로그램을 종료합니다.\n");
             return 0;
-        }else if(num != 1 && num !=2){
+        }else {
 		printf("check the number plz\n");
 		continue;
 	}
@@ -353,7 +360,7 @@ void data_process(unsigned char* buffer,int buflen)
 void menu(){
 	system("clear");
     printf("--------------------------------------------------\n");
-	printf("컴퓨터 네트워크 1 조\n");
+	printf("컴퓨터 네트워c크 1 조\n");
 	printf("TCP -> curl\n");
 	printf("DNS -> nslookup\n");
 	printf("ICMP -> ping\n\n");
