@@ -34,9 +34,9 @@ void icmp_packet(unsigned char* buffer, int buflen); // ICMP
 void data_process(unsigned char* buffer,int buflen); // 받은 패킷 중에 TCP 또는 UDP일 때 다르게 캡처하기 위한 함수
 void menu(); // 메뉴 선택 함수
 void *PacketCapture();
-void dnscapture(); 	//dns capture call curl 
-void tcpcapture();	//tcp capture call nslookup
-void icmpcapture();	//icmp capture call ping
+void dnscapture(); 	//dns capture 
+void tcpcapture();	//tcp capture
+void icmpcapture();	//icmp capture
 pthread_t tid;        // thread id
 bool check = false;
 
@@ -172,6 +172,7 @@ void dnscapture(){
         {
                 printf("%s \n",inet_ntoa(*addr_list[i]));
         };
+        printf("%s(IPv4) Name Server Count = %d\n",he->h_name, i);
         printf("\n");
         
         system(systemcall);
@@ -306,6 +307,10 @@ void icmp_packet(unsigned char* Buffer , int buflen)
 	else if((unsigned int)(icmph->type) == ICMP_ECHOREPLY)
 	{
 		fprintf(log_txt , "  (ICMP Echo Reply)\n");
+	}
+	else if((unsigned int)(icmph->type) == ICMP_ECHO)
+	{
+		fprintf(log_txt, "   (ICMP Echo Request)\n");
 	}
 	
 	fprintf(log_txt , "   |-Code : %d\n",(unsigned int)(icmph->code));
