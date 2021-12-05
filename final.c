@@ -34,9 +34,9 @@ void icmp_packet(unsigned char* buffer, int buflen); // ICMP
 void data_process(unsigned char* buffer,int buflen); // 받은 패킷 중에 TCP 또는 UDP일 때 다르게 캡처하기 위한 함수
 void menu(); // 메뉴 선택 함수
 void *PacketCapture();
-void dnscapture(); 	//dns capture 
-void tcpcapture();	//tcp capture
-void icmpcapture();	//icmp capture
+void dnscapture(); 	//dns capture call nslookup
+void tcpcapture();	//tcp capture call curl
+void icmpcapture();	//icmp capture call ping
 pthread_t tid;        // thread id
 bool check = false;
 
